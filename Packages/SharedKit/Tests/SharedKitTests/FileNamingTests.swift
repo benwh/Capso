@@ -152,6 +152,84 @@ struct FileNamingTests {
         #expect(fileName == "Doc-One-Draft.png")
     }
 
+    @Test("Custom date token renders its own format")
+    func customDateTokenRendersOwnFormat() {
+        let fileName = FileNaming.generateFileName(
+            for: .screenshot,
+            format: .png,
+            date: localDate(),
+            template: "screenshot-{date:yyyyMMdd-HHmmss}"
+        )
+
+        #expect(fileName == "screenshot-20240115-160000.png")
+    }
+
+    @Test("Custom date token can appear more than once")
+    func customDateTokenRepeats() {
+        let name = FileNaming.generateName(
+            for: .screenshot,
+            date: localDate(),
+            template: "{date:yyyy}-{date:MMdd}"
+        )
+
+        #expect(name == "2024-0115")
+    }
+
+    @Test("Custom date token reaches sub-second precision")
+    func customDateTokenSupportsMilliseconds() {
+        let name = FileNaming.generateName(
+            for: .screenshot,
+            date: localDate(),
+            template: "{date:HHmmssSSS}"
+        )
+
+        #expect(name == "160000000")
+    }
+
+    @Test("Custom date token ignores the user locale")
+    func customDateTokenIgnoresUserLocale() {
+        let name = FileNaming.generateName(
+            for: .screenshot,
+            date: localDate(),
+            template: "{date:MMM}"
+        )
+
+        #expect(name == "Jan")
+    }
+
+    @Test("Empty custom date pattern falls back to the default date")
+    func emptyCustomDatePatternFallsBack() {
+        let name = FileNaming.generateName(
+            for: .screenshot,
+            date: localDate(),
+            template: "{date:}"
+        )
+
+        #expect(name == "2024-01-15")
+    }
+
+    @Test("Unterminated custom date token is left as typed")
+    func unterminatedCustomDateTokenIsLiteral() {
+        let name = FileNaming.generateName(
+            for: .screenshot,
+            date: localDate(),
+            template: "shot-{date:yyyy"
+        )
+
+        #expect(name == "shot-{date-yyyy")
+    }
+
+    @Test("Bare date tokens keep their existing formats")
+    func bareDateTokensAreUnchanged() {
+        let name = FileNaming.generateName(
+            for: .screenshot,
+            date: localDate(),
+            template: "{date} {time} {timestamp}"
+        )
+
+        #expect(name == "2024-01-15 16.00.00 2024-01-15 at 16.00.00")
+    }
+
     @Test("Random filename token is lowercase base36")
     func randomFilenameTokenIsLowercaseBase36() {
         let name = FileNaming.generateName(

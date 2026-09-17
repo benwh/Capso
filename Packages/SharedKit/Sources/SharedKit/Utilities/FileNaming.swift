@@ -56,6 +56,7 @@ public enum FileNaming {
     public static let defaultScreenshotTemplate = "Capso Screenshot{source} {timestamp}"
     public static let defaultRecordingTemplate = "Capso Recording {timestamp}"
 
+    private static let customDateTokenPrefix = "{date:"
     private static let maxBaseNameUTF8Length = 200
     private static let randomAlphabet = Array("0123456789abcdefghijklmnopqrstuvwxyz")
 
@@ -172,10 +173,44 @@ public enum FileNaming {
         for (token, value) in replacements {
             output = output.replacingOccurrences(of: token, with: value)
         }
+        output = renderCustomDateTokens(in: output, date: date)
         while let range = output.range(of: "{random}") {
             output.replaceSubrange(range, with: randomToken())
         }
         return output
+    }
+
+    private static func renderCustomDateTokens(in template: String, date: Date) -> String {
+        var output = ""
+        var remainder = Substring(template)
+
+        while let token = remainder.range(of: customDateTokenPrefix) {
+            output += remainder[remainder.startIndex..<token.lowerBound]
+            let afterPrefix = remainder[token.upperBound...]
+            guard let terminator = afterPrefix.firstIndex(of: "}") else {
+                // Without a closing brace this isn't a token, so the text stays as typed.
+                return output + remainder[token.lowerBound...]
+            }
+            output += formattedDate(date, pattern: String(afterPrefix[..<terminator]))
+            remainder = afterPrefix[afterPrefix.index(after: terminator)...]
+        }
+
+        return output + remainder
+    }
+
+    private static func formattedDate(_ date: Date, pattern: String) -> String {
+        let trimmed = pattern.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return dateFormatter.string(from: date) }
+
+        // A fixed locale and calendar give the same name on every machine. The user's own
+        // would translate `MMM` and could switch the calendar.
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = trimmed
+
+        let rendered = formatter.string(from: date)
+        return rendered.isEmpty ? dateFormatter.string(from: date) : rendered
     }
 
     private static func sanitizedTokenValue(_ name: String?) -> String? {

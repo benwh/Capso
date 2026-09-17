@@ -220,6 +220,7 @@ struct ExportSettingsView: View {
             tokenRow("{app}", "Safari")
             tokenRow("{window}", "Example Window")
             tokenRow("{random}", "8-character random text")
+            tokenRow("{date:...}", "Custom date format, e.g. yyyyMMdd-HHmmss → 20260607-161123")
         }
         .padding(14)
         .frame(width: 300, alignment: .leading)
