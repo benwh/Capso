@@ -148,6 +148,32 @@ public enum FileNaming {
         baseDirectory.appendingPathComponent(monthFormatter.string(from: date), isDirectory: true)
     }
 
+    // Generated names only go down to the second, so two captures in the same second get the
+    // same name. Numbering the later one keeps the earlier file, as Finder does.
+    public static func availableFileURL(
+        for preferredURL: URL,
+        fileManager: FileManager = .default
+    ) -> URL {
+        guard fileManager.fileExists(atPath: preferredURL.path) else {
+            return preferredURL
+        }
+
+        let directory = preferredURL.deletingLastPathComponent()
+        let baseName = preferredURL.deletingPathExtension().lastPathComponent
+        let pathExtension = preferredURL.pathExtension
+
+        var index = 2
+        while true {
+            let candidate = directory
+                .appendingPathComponent("\(baseName) \(index)", isDirectory: false)
+                .appendingPathExtension(pathExtension)
+            if !fileManager.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+            index += 1
+        }
+    }
+
     private static func renderTemplate(
         _ template: String,
         date: Date,

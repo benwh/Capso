@@ -909,16 +909,24 @@ final class RecordingCoordinator {
     ) async -> URL? {
         let exportFormat: ExportFormat = format == .gif ? .gif : .mp4
         let fileFormat: FileFormat = format == .gif ? .gif : .mp4
-        let destURL: URL
+        let preferredDestURL: URL
+        let destinationIsGenerated: Bool
         if let destinationOverride {
-            destURL = destinationOverride
+            preferredDestURL = destinationOverride
+            destinationIsGenerated = false
         } else {
             let exportDir = settings.exportLocation
             let fileName = FileNaming.generateFileName(for: .recording, format: fileFormat)
-            destURL = exportDir.appendingPathComponent(fileName)
+            preferredDestURL = exportDir.appendingPathComponent(fileName)
+            destinationIsGenerated = true
         }
-        let exportDir = destURL.deletingLastPathComponent()
+        let exportDir = preferredDestURL.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: exportDir, withIntermediateDirectories: true)
+        // The save panel has already asked about replacing a destination the user chose, so
+        // only generated names are numbered.
+        let destURL = destinationIsGenerated
+            ? FileNaming.availableFileURL(for: preferredDestURL)
+            : preferredDestURL
 
         let options = ExportOptions(
             format: exportFormat,

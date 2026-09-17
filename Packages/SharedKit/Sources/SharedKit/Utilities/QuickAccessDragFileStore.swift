@@ -61,7 +61,7 @@ public final class QuickAccessDragFileStore {
             sourceWindowTitle: sourceWindowTitle,
             template: template
         )
-        let fileURL = availableFileURL(for: preferredURL)
+        let fileURL = FileNaming.availableFileURL(for: preferredURL, fileManager: fileManager)
 
         do {
             try data.write(to: fileURL, options: [.atomic])
@@ -118,27 +118,6 @@ public final class QuickAccessDragFileStore {
             return encoder(image)
         }
         return ImageEncoders.default.encode(image, format: output.format, quality: output.quality)
-    }
-
-    private func availableFileURL(for preferredURL: URL) -> URL {
-        guard fileManager.fileExists(atPath: preferredURL.path) else {
-            return preferredURL
-        }
-
-        let directory = preferredURL.deletingLastPathComponent()
-        let baseName = preferredURL.deletingPathExtension().lastPathComponent
-        let pathExtension = preferredURL.pathExtension
-
-        var index = 2
-        while true {
-            let candidate = directory
-                .appendingPathComponent("\(baseName) \(index)", isDirectory: false)
-                .appendingPathExtension(pathExtension)
-            if !fileManager.fileExists(atPath: candidate.path) {
-                return candidate
-            }
-            index += 1
-        }
     }
 
     private func prepareStorage() throws {

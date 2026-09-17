@@ -709,7 +709,7 @@ final class HistoryCoordinator {
         let directory = settings.screenshotMonthlyFolders
             ? FileNaming.monthlyDirectory(in: settings.exportLocation)
             : settings.exportLocation
-        let url = FileNaming.generateFileURL(
+        let preferredURL = FileNaming.generateFileURL(
             in: directory,
             type: .screenshot,
             format: output.format.fileFormat,
@@ -719,7 +719,7 @@ final class HistoryCoordinator {
             template: settings.screenshotFilenameTemplate
         )
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try? data.write(to: url)
+        try? data.write(to: FileNaming.availableFileURL(for: preferredURL))
     }
 
     func copyToClipboard(_ entry: HistoryEntry) {

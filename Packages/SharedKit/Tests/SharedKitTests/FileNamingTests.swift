@@ -191,4 +191,55 @@ struct FileNamingTests {
         #expect(directory.lastPathComponent == "2024-01")
         #expect(directory.deletingLastPathComponent() == base)
     }
+
+    private func makeTemporaryDirectory() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileNamingTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    @Test("Available file URL keeps the preferred name when it is free")
+    func availableFileURLKeepsFreeName() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let preferredURL = directory.appendingPathComponent("screenshot.png")
+
+        #expect(FileNaming.availableFileURL(for: preferredURL) == preferredURL)
+    }
+
+    @Test("Available file URL numbers each collision instead of replacing the file")
+    func availableFileURLNumbersCollisions() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let preferredURL = directory.appendingPathComponent("screenshot.png")
+        try Data("first".utf8).write(to: preferredURL)
+
+        let secondURL = FileNaming.availableFileURL(for: preferredURL)
+        #expect(secondURL.lastPathComponent == "screenshot 2.png")
+
+        try Data("second".utf8).write(to: secondURL)
+        let thirdURL = FileNaming.availableFileURL(for: preferredURL)
+        #expect(thirdURL.lastPathComponent == "screenshot 3.png")
+
+        #expect(try Data(contentsOf: preferredURL) == Data("first".utf8))
+    }
+
+    @Test("Available file URL preserves a dotted timestamp base name")
+    func availableFileURLPreservesDottedBaseName() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileName = FileNaming.generateFileName(
+            for: .screenshot,
+            format: .png,
+            date: localDate(),
+            template: "screenshot-{date}-{time}"
+        )
+        let preferredURL = directory.appendingPathComponent(fileName)
+        try Data("first".utf8).write(to: preferredURL)
+
+        let secondURL = FileNaming.availableFileURL(for: preferredURL)
+
+        #expect(secondURL.lastPathComponent == "screenshot-2024-01-15-16.00.00 2.png")
+    }
 }

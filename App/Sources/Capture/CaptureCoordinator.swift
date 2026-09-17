@@ -2208,7 +2208,7 @@ final class CaptureCoordinator {
         let directory = settings.screenshotMonthlyFolders
             ? FileNaming.monthlyDirectory(in: settings.exportLocation)
             : settings.exportLocation
-        let url = FileNaming.generateFileURL(
+        let preferredURL = FileNaming.generateFileURL(
             in: directory,
             type: .screenshot,
             format: encoded.format.fileFormat,
@@ -2219,6 +2219,7 @@ final class CaptureCoordinator {
         )
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let url = FileNaming.availableFileURL(for: preferredURL)
             try encoded.data.write(to: url)
             return url
         } catch {
